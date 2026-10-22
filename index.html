@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Lab Maya: Aturan Bermain - SD Negeri 4 Peliatan</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      user-select: none;
+      -webkit-user-select: none;
+      box-sizing: border-box;
+      touch-action: manipulation;
+    }
+    body {
+      font-family: 'Fredoka', 'Nunito', sans-serif;
+      background-color: #0f172a;
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    /* 16:9 Aspect Ratio Container */
+    #app-container {
+      width: 100vw;
+      height: 56.25vw; /* 16:9 ratio */
+      max-height: 100vh;
+      max-width: 177.78vh; /* 16:9 ratio */
+      position: relative;
+      background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 100%);
+      border-radius: 16px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.37);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    /* Custom Scrollbars for tab contents */
+    .custom-scroll::-webkit-scrollbar {
+      width: 8px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.05);
+      border-radius: 10px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #3b82f6;
+      border-radius: 10px;
+    }
+    .tab-btn {
+      transition: all 0.2s ease;
+    }
+    .tab-btn.active {
+      background-color: #f59e0b;
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+    }
+    .drag-card {
+      cursor: grab;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .drag-card:active {
+      cursor: grabbing;
+      transform: scale(1.05);
+    }
+    .drop-zone {
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+    .drop-zone.drag-over {
+      background-color: rgba(59, 130, 246, 0.15);
+      border-color: #2563eb;
+    }
+    /* Bounce animation */
+    @keyframes bounce-gentle {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+    .animate-bounce-gentle {
+      animation: bounce-gentle 2s infinite;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="app-container">
+
+    <!-- TOP HEADER / NAV BAR -->
+    <header class="h-[12%] bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 flex items-center justify-between shadow-md z-10 shrink-0">
+      <div class="flex items-center space-x-2">
+        <div class="bg-amber-400 p-2 rounded-xl text-blue-900 font-extrabold text-lg sm:text-xl shadow">
+          🎮
+        </div>
+        <div>
+          <h1 class="text-sm sm:text-lg md:text-xl font-bold leading-tight drop-shadow">Lab Maya Aturan Bermain</h1>
+          <p class="text-[10px] sm:text-xs text-blue-200">SD Negeri 4 Peliatan • Fase A Kelas 1</p>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="flex items-center space-x-1 sm:space-x-2">
+        <button onclick="switchTab('teori')" id="nav-teori" class="tab-btn px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-xl font-bold text-xs sm:text-sm bg-white/20 hover:bg-white/30 text-white flex items-center space-x-1">
+          <span>📖</span><span class="hidden md:inline"> Teori</span>
+        </button>
+        <button onclick="switchTab('prosedur')" id="nav-prosedur" class="tab-btn px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-xl font-bold text-xs sm:text-sm bg-white/20 hover:bg-white/30 text-white flex items-center space-x-1">
+          <span>📋</span><span class="hidden md:inline"> Prosedur</span>
+        </button>
+        <button onclick="switchTab('simulasi')" id="nav-simulasi" class="tab-btn active px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-xl font-bold text-xs sm:text-sm flex items-center space-x-1">
+          <span>🧩</span><span> Simulasi</span>
+        </button>
+        <button onclick="switchTab('lkpd')" id="nav-lkpd" class="tab-btn px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-xl font-bold text-xs sm:text-sm bg-white/20 hover:bg-white/30 text-white flex items-center space-x-1">
+          <span>📝</span><span> LKPD</span>
+        </button>
+        <button onclick="switchTab('pengembang')" id="nav-pengembang" class="tab-btn px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-xl font-bold text-xs sm:text-sm bg-white/20 hover:bg-white/30 text-white flex items-center space-x-1">
+          <span>👨‍🏫</span><span class="hidden md:inline"> Profil</span>
+        </button>
+      </nav>
+
+      <!-- Sound & Controls -->
+      <div class="flex items-center space-x-2">
+        <button onclick="toggleAudio()" id="audio-btn" class="p-2 bg-white/20 hover:bg-white/30 rounded-xl text-white text-xs sm:text-sm font-bold flex items-center justify-center w-9 h-9" title="Suara">
+          🔊
+        </button>
+        <button onclick="resetCurrentTab()" class="p-2 bg-red-500 hover:bg-red-600 rounded-xl text-white text-xs sm:text-sm font-bold flex items-center justify-center w-9 h-9 shadow" title="Reset">
+          🔄
+        </button>
+      </div>
+    </header>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="h-[88%] relative overflow-hidden flex-1 p-3">
+
+      <!-- TAB 1: TEORI -->
+      <div id="tab-teori" class="tab-content hidden h-full flex-col space-y-3 overflow-y-auto custom-scroll pr-1">
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-blue-100 flex items-center space-x-3">
+          <div class="text-3xl">💡</div>
+          <div>
+            <h2 class="text-lg font-bold text-blue-900">Apa Itu Aturan Bermain?</h2>
+            <p class="text-xs sm:text-sm text-slate-600">Aturan adalah hal yang **boleh** dan **tidak boleh** dilakukan saat bermain agar semua senang, aman, dan punya banyak teman!</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 flex-1">
+          <!-- Card Sekolah -->
+          <div class="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 rounded-2xl p-3 flex flex-col">
+            <div class="flex items-center space-x-2 mb-2 pb-1 border-b border-amber-200">
+              <span class="text-xl">🏫</span>
+              <h3 class="font-bold text-amber-900 text-sm sm:text-base">Aturan Bermain di Sekolah</h3>
+            </div>
+            <ul class="text-xs sm:text-sm text-amber-950 space-y-2 flex-1 flex flex-col justify-around">
+              <li class="flex items-start space-x-2 bg-white/80 p-2 rounded-xl">
+                <span>✅</span> <span>**Antri Bergantian:** Menunggu giliran main perosotan atau ayunan.</span>
+              </li>
+              <li class="flex items-start space-x-2 bg-white/80 p-2 rounded-xl">
+                <span>✅</span> <span>**Bermain Bersama:** Tidak memilih-milih teman dan ramah.</span>
+              </li>
+              <li class="flex items-start space-x-2 bg-white/80 p-2 rounded-xl">
+                <span>✅</span> <span>**Ingat Waktu:** Kembali ke kelas saat bel masuk berbunyi.</span>
+              </li>
+              <li class="flex items-start space-x-2 bg-white/80 p-2 rounded-xl">
+                <span>❌</span> <span>**Dilarang Berebut:** Tidak mendorong atau merebut mainan teman.</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Card Rumah -->
+          <div class="bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200 rounded-2xl p-3 flex flex-col">
+            <div class="flex items-center space-x-2 mb-2 pb-1 border-b border-emerald-200">
+              <span class="text-xl">🏡</span>
+              <h3 class="font-bold text-emerald-900 text-sm sm:text-base">Aturan Bermain di Rumah</h3>
+            </div>
+            <ul class="text-xs sm:text-sm text-emerald-950 space-y-2 flex-1 flex flex-col justify-around">
+              <li class="flex items-start space-x-2 bg-white/80 p-2 rounded-xl">
+                <span>✅</span> <span>**Merapikan Mainan:** Simpan kembali mainan ke tempatnya setelah selesai.</span>
+              </li>
+              <li class="flex items-start space-x-2 bg-white/80 p-2 rounded-xl">
+                <span>✅</span> <span>**Izin Orang Tua:** Pamit dulu sebelum pergi bermain ke luar rumah.</span>
+              </li>
+              <li class="flex items-start space-x-2 bg-white/80 p-2 rounded-xl">
+                <span>✅</span> <span>**Ingat Jam Pulang:** Pulang dan mandi sebelum hari mulai sore.</span>
+              </li>
+              <li class="flex items-start space-x-2 bg-white/80 p-2 rounded-xl">
+                <span>❌</span> <span>**Tidak Berantakan:** Jangan meninggalkan mainan berserakan di lantai.</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: PROSEDUR -->
+      <div id="tab-prosedur" class="tab-content hidden h-full flex-col justify-between overflow-y-auto custom-scroll pr-1 space-y-3">
+        <div class="bg-white rounded-2xl p-3 shadow-sm border border-blue-100 flex items-center space-x-3">
+          <div class="text-3xl">📌</div>
+          <div>
+            <h2 class="text-lg font-bold text-blue-900">Petunjuk Belajar Lab Maya</h2>
+            <p class="text-xs sm:text-sm text-slate-600">Ikuti langkah mudah di bawah ini untuk memulai petualangan belajarmu!</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-1">
+          <div class="bg-blue-50 border-2 border-blue-200 rounded-2xl p-3 flex flex-col items-center text-center">
+            <div class="w-10 h-10 bg-blue-500 text-white font-black text-lg rounded-full flex items-center justify-center mb-2 shadow">1</div>
+            <h3 class="font-bold text-blue-900 text-sm mb-1">Pelajari Teori</h3>
+            <p class="text-xs text-slate-600">Buka tab **Teori** untuk memahami contoh aturan bermain di sekolah dan di rumah.</p>
+          </div>
+
+          <div class="bg-amber-50 border-2 border-amber-200 rounded-2xl p-3 flex flex-col items-center text-center">
+            <div class="w-10 h-10 bg-amber-500 text-white font-black text-lg rounded-full flex items-center justify-center mb-2 shadow">2</div>
+            <h3 class="font-bold text-amber-900 text-sm mb-1">Coba Simulasi</h3>
+            <p class="text-xs text-slate-600">Di tab **Simulasi**, tarik / klik kartu perilaku ke tempat yang benar (Sekolah / Rumah / Terpuji / Buruk).</p>
+          </div>
+
+          <div class="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-3 flex flex-col items-center text-center">
+            <div class="w-10 h-10 bg-emerald-500 text-white font-black text-lg rounded-full flex items-center justify-center mb-2 shadow">3</div>
+            <h3 class="font-bold text-emerald-900 text-sm mb-1">Kerjakan LKPD</h3>
+            <p class="text-xs text-slate-600">Jawab kuis interaktif pada tab **LKPD** dan dapatkan Bintang Prestasi dirimu!</p>
+          </div>
+        </div>
+
+        <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-2.5 text-center text-xs text-indigo-900 font-medium">
+          💡 *Tips: Tekan tombol 🔄 Reset kapan saja jika ingin mengulang latihan dari awal.*
+        </div>
+      </div>
+
+      <!-- TAB 3: SIMULASI -->
+      <div id="tab-simulasi" class="tab-content h-full flex flex-col justify-between">
+        <!-- Modes Header -->
+        <div class="flex items-center justify-between bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm mb-2">
+          <div class="flex items-center space-x-2">
+            <span class="text-xs font-bold text-slate-500">Mode:</span>
+            <button onclick="setSimMode('tempat')" id="mode-btn-tempat" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-600 text-white shadow-sm">
+              🏫 Tempat (Sekolah vs Rumah)
+            </button>
+            <button onclick="setSimMode('sikap')" id="mode-btn-sikap" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-200 text-slate-700 hover:bg-slate-300">
+              👍 Perilaku (Boleh vs Tidak Boleh)
+            </button>
+          </div>
+          <div id="sim-score" class="text-xs sm:text-sm font-extrabold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg border border-indigo-100">
+            Skor: 0 / 6
+          </div>
+        </div>
+
+        <!-- Cards Deck & Drop Zones Area -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 flex-1 min-h-0">
+          
+          <!-- Drop Zone A -->
+          <div id="zone-a" class="drop-zone border-2 border-dashed border-blue-400 bg-blue-50/60 rounded-2xl p-2.5 flex flex-col justify-between" ondragover="allowDrop(event)" ondrop="handleDrop(event, 'A')">
+            <div class="flex items-center space-x-2 pb-1 border-b border-blue-200">
+              <span id="zone-a-icon" class="text-lg">🏫</span>
+              <h3 id="zone-a-title" class="font-bold text-blue-900 text-xs sm:text-sm">Aturan di Sekolah</h3>
+            </div>
+            <div id="zone-a-container" class="flex-1 flex flex-col space-y-1.5 overflow-y-auto custom-scroll my-1 p-1">
+              <!-- Placed cards go here -->
+            </div>
+            <button onclick="quickDrop('A')" class="w-full py-1 text-[11px] bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg shadow sm:hidden">
+              Pindahkan Ke Sini ⬆️
+            </button>
+          </div>
+
+          <!-- Cards Deck (Middle) -->
+          <div class="bg-white/80 border border-slate-200 rounded-2xl p-2.5 flex flex-col justify-between">
+            <div class="text-center font-bold text-xs text-slate-600 mb-1">
+              👈 Pilih / Tarik Kartu 👉
+            </div>
+            <div id="deck-container" class="flex-1 flex flex-col justify-center space-y-2 overflow-y-auto custom-scroll p-1">
+              <!-- Active Card dynamically loaded here -->
+            </div>
+            <div class="text-[10px] text-center text-slate-400 mt-1 hidden sm:block">
+              *Tarik kartu atau pilih zone target
+            </div>
+          </div>
+
+          <!-- Drop Zone B -->
+          <div id="zone-b" class="drop-zone border-2 border-dashed border-emerald-400 bg-emerald-50/60 rounded-2xl p-2.5 flex flex-col justify-between" ondragover="allowDrop(event)" ondrop="handleDrop(event, 'B')">
+            <div class="flex items-center space-x-2 pb-1 border-b border-emerald-200">
+              <span id="zone-b-icon" class="text-lg">🏡</span>
+              <h3 id="zone-b-title" class="font-bold text-emerald-900 text-xs sm:text-sm">Aturan di Rumah</h3>
+            </div>
+            <div id="zone-b-container" class="flex-1 flex flex-col space-y-1.5 overflow-y-auto custom-scroll my-1 p-1">
+              <!-- Placed cards go here -->
+            </div>
+            <button onclick="quickDrop('B')" class="w-full py-1 text-[11px] bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg shadow sm:hidden">
+              Pindahkan Ke Sini ⬆️
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- TAB 4: LKPD -->
+      <div id="tab-lkpd" class="tab-content hidden h-full flex-col justify-between overflow-y-auto custom-scroll pr-1 space-y-2">
+        <div class="bg-white rounded-xl p-2.5 shadow-sm border border-blue-100 flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <span class="text-2xl">📝</span>
+            <div>
+              <h2 class="text-sm sm:text-base font-bold text-blue-900">Lembar Kerja Peserta Didik (LKPD)</h2>
+              <p class="text-[11px] text-slate-500">Jawab 5 pertanyaan bergambar dengan menekan pilihan yang benar!</p>
+            </div>
+          </div>
+          <div id="quiz-score-badge" class="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full border border-amber-300">
+            Nilai: 0
+          </div>
+        </div>
+
+        <!-- Quiz List Container -->
+        <div id="quiz-container" class="flex-1 space-y-3">
+          <!-- Quiz items injected by JS -->
+        </div>
+
+        <!-- Submit / Result Area -->
+        <div id="quiz-footer" class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between mt-2">
+          <div id="quiz-feedback" class="text-xs font-bold text-slate-600">
+            Selesaikan semua soal untuk melihat hasil!
+          </div>
+          <button onclick="submitQuiz()" class="px-5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl shadow-md text-xs sm:text-sm transition">
+            Periksa Jawaban ✨
+          </button>
+        </div>
+      </div>
+
+      <!-- TAB 5: PENGEMBANG -->
+      <div id="tab-pengembang" class="tab-content hidden h-full flex-col justify-between overflow-y-auto custom-scroll pr-1">
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex flex-col md:flex-row items-center space-y-3 md:space-y-0 md:space-x-4">
+          <div class="w-20 h-20 bg-gradient-to-tr from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-4xl text-white shadow-lg shrink-0">
+            👨‍🏫
+          </div>
+          <div class="text-center md:text-left flex-1">
+            <span class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">Pengembang Media</span>
+            <h2 class="text-lg font-bold text-slate-800 mt-1">Guru SD Negeri 4 Peliatan</h2>
+            <p class="text-xs text-slate-600">Pengembang Laboratorium Maya Interaktif Sekolah Dasar</p>
+            <p class="text-xs text-indigo-600 font-semibold mt-1">Mata Pelajaran: Pendidikan Pancasila / PKn • Fase A Kelas 1</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 my-2 flex-1">
+          <div class="bg-blue-50/80 border border-blue-200 rounded-2xl p-3 flex flex-col justify-center">
+            <h3 class="font-bold text-blue-900 text-xs sm:text-sm mb-1 flex items-center">
+              <span class="mr-1.5">🏫</span> Instansi & Sekolah
+            </h3>
+            <p class="text-xs text-slate-700">SD Negeri 4 Peliatan, Kecamatan Ubud, Kabupaten Gianyar, Bali.</p>
+          </div>
+
+          <div class="bg-amber-50/80 border border-amber-200 rounded-2xl p-3 flex flex-col justify-center">
+            <h3 class="font-bold text-amber-900 text-xs sm:text-sm mb-1 flex items-center">
+              <span class="mr-1.5">🎯</span> Visi Pengembangan
+            </h3>
+            <p class="text-xs text-slate-700">Mewujudkan pembelajaran karakter dan aturan sekolah/rumah yang menyenangkan, kontekstual, serta berbasis teknologi interaktif untuk siswa kelas awal.</p>
+          </div>
+        </div>
+
+        <div class="bg-slate-100 border border-slate-200 rounded-xl p-2.5 text-center text-[11px] text-slate-500">
+          Aplikasi Standalone Virtual Lab • Versi 1.0 • Standar Kurikulum Merdeka Fase A
+        </div>
+      </div>
+
+    </main>
+
+    <!-- SPLASH SCREEN OVERLAY -->
+    <div id="splash-screen" class="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 z-50 flex flex-col items-center justify-between p-6 text-white text-center">
+      
+      <div class="mt-4">
+        <div class="inline-block bg-white/20 backdrop-blur-md px-4 py-1 rounded-full text-xs font-semibold mb-2 text-blue-100">
+          🌟 Media Pembelajaran Interaktif SD
+        </div>
+        <h1 class="text-2xl sm:text-4xl font-extrabold tracking-wide drop-shadow-md">
+          LAB MAYA INTERAKTIF
+        </h1>
+        <p class="text-sm sm:text-lg text-amber-300 font-bold mt-1">
+          "Aturan Bermain di Sekolah & di Rumah"
+        </p>
+        <p class="text-xs text-blue-200 mt-0.5">Kelas 1 SD (Fase A) • SD Negeri 4 Peliatan</p>
+      </div>
+
+      <!-- Hero Mascot Icon -->
+      <div class="my-auto relative animate-bounce-gentle">
+        <div class="w-28 h-28 sm:w-36 sm:h-36 bg-amber-400 rounded-3xl flex items-center justify-center text-6xl sm:text-7xl shadow-2xl border-4 border-white transform rotate-3">
+          🎲
+        </div>
+      </div>
+
+      <!-- Loading / Start Button Container -->
+      <div class="w-full max-w-xs mb-4">
+        <div id="loading-bar-container" class="w-full bg-white/20 rounded-full h-4 p-0.5 mb-2 overflow-hidden border border-white/30">
+          <div id="loading-bar" class="bg-gradient-to-r from-amber-300 to-amber-500 h-full rounded-full transition-all duration-300 w-0"></div>
+        </div>
+        <p id="loading-text" class="text-xs text-blue-100 font-medium mb-3">Memuat media pembelajaran...</p>
+
+        <button id="start-btn" onclick="startApp()" class="hidden w-full py-3 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white font-extrabold text-base rounded-2xl shadow-xl transform active:scale-95 transition flex items-center justify-center space-x-2 border-2 border-amber-200">
+          <span>MULAI BELAJAR</span>
+          <span>🚀</span>
+        </button>
+      </div>
+
+      <div class="text-[10px] text-blue-200">
+        Disusun oleh Guru SD Negeri 4 Peliatan
+      </div>
+    </div>
+
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    // --- AUDIO SYSTEM (Web Audio API Synthesizer) ---
+    let audioEnabled = true;
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) {
+          audioCtx = new AudioContext();
+        }
+      }
+    }
+
+    function playSound(type) {
+      if (!audioEnabled) return;
+      initAudio();
+      if (!audioCtx) return;
+
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      const now = audioCtx.currentTime;
+
+      if (type === 'click') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.exponentialRampToValueAtTime(800, now + 0.08);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+        osc.start(now);
+        osc.stop(now + 0.08);
+      } else if (type === 'correct') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(523.25, now); // C5
+        osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+        osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.35);
+        osc.start(now);
+        osc.stop(now + 0.35);
+      } else if (type === 'wrong') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.setValueAtTime(164.81, now + 0.12);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
+        osc.start(now);
+        osc.stop(now + 0.25);
+      } else if (type === 'start') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.exponentialRampToValueAtTime(900, now + 0.25);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+        osc.start(now);
+        osc.stop(now + 0.3);
+      }
+    }
+
+    function toggleAudio() {
+      audioEnabled = !audioEnabled;
+      const btn = document.getElementById('audio-btn');
+      btn.innerText = audioEnabled ? '🔊' : '🔇';
+      playSound('click');
+    }
+
+    // --- SPLASH SCREEN & SIMULATED LOADING ---
+    window.addEventListener('load', () => {
+      const bar = document.getElementById('loading-bar');
+      const text = document.getElementById('loading-text');
+      const startBtn = document.getElementById('start-btn');
+
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += 20;
+        bar.style.width = progress + '%';
+        if (progress >= 100) {
+          clearInterval(interval);
+          text.classList.add('hidden');
+          bar.parentElement.classList.add('hidden');
+          startBtn.classList.remove('hidden');
+        }
+      }, 150);
+    });
+
+    function startApp() {
+      playSound('start');
+      const splash = document.getElementById('splash-screen');
+      splash.style.transition = 'opacity 0.5s ease';
+      splash.style.opacity = '0';
+      setTimeout(() => {
+        splash.classList.add('hidden');
+      }, 500);
+      initSimData();
+      initQuizData();
+    }
+
+    // --- TAB SWITCHING SYSTEM ---
+    let currentTab = 'simulasi';
+
+    function switchTab(tabId) {
+      playSound('click');
+      currentTab = tabId;
+
+      // Hide all tabs
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+
+      // Show target
+      const target = document.getElementById('tab-' + tabId);
+      if (target) {
+        target.classList.remove('hidden');
+        target.classList.add('flex');
+      }
+
+      // Active Button Styling
+      const activeBtn = document.getElementById('nav-' + tabId);
+      if (activeBtn) activeBtn.classList.add('active');
+    }
+
+    function resetCurrentTab() {
+      playSound('click');
+      if (currentTab === 'simulasi') {
+        initSimData();
+      } else if (currentTab === 'lkpd') {
+        initQuizData();
+      }
+    }
+
+    // --- SIMULATION DATA & GAME LOGIC ---
+    let simMode = 'tempat'; // 'tempat' or 'sikap'
+    let cardDeck = [];
+    let placedCards = { A: [], B: [] };
+    let simScore = 0;
+
+    const datasetTempat = [
+      { id: '1', title: 'Antri giliran bermain perosotan', type: 'A', icon: '🛝' },
+      { id: '2', title: 'Merapikan mainan di dalam kamar', type: 'B', icon: '🧸' },
+      { id: '3', title: 'Kembali ke kelas saat bel berbunyi', type: 'A', icon: '🔔' },
+      { id: '4', title: 'Izin ke ibu sebelum main di luar', type: 'B', icon: '🏡' },
+      { id: '5', title: 'Bermain ramah bersama teman kelas', type: 'A', icon: '🎒' },
+      { id: '6', title: 'Pulang main sebelum hari sore', type: 'B', icon: '🌆' }
+    ];
+
+    const datasetSikap = [
+      { id: '101', title: 'Berbagi mainan dengan teman', type: 'A', icon: '🤝' },
+      { id: '102', title: 'Berebut mainan sampai bertengkar', type: 'B', icon: '😠' },
+      { id: '103', title: 'Menyimpan mainan di tempatnya', type: 'A', icon: '📦' },
+      { id: '104', title: 'Mendorong teman saat antri', type: 'B', icon: '⚠️' },
+      { id: '105', title: 'Mengucapkan terima kasih saat meminjam', type: 'A', icon: '💬' },
+      { id: '106', title: 'Meninggalkan mainan berserakan', type: 'B', icon: '🚫' }
+    ];
+
+    function setSimMode(mode) {
+      playSound('click');
+      simMode = mode;
+      
+      const btnTempat = document.getElementById('mode-btn-tempat');
+      const btnSikap = document.getElementById('mode-btn-sikap');
+      const zoneATitle = document.getElementById('zone-a-title');
+      const zoneBTitle = document.getElementById('zone-b-title');
+      const zoneAIcon = document.getElementById('zone-a-icon');
+      const zoneBIcon = document.getElementById('zone-b-icon');
+
+      if (mode === 'tempat') {
+        btnTempat.className = "px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-600 text-white shadow-sm";
+        btnSikap.className = "px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-200 text-slate-700 hover:bg-slate-300";
+        zoneATitle.innerText = "Aturan di Sekolah";
+        zoneBTitle.innerText = "Aturan di Rumah";
+        zoneAIcon.innerText = "🏫";
+        zoneBIcon.innerText = "🏡";
+      } else {
+        btnSikap.className = "px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-600 text-white shadow-sm";
+        btnTempat.className = "px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-200 text-slate-700 hover:bg-slate-300";
+        zoneATitle.innerText = "Boleh / Terpuji";
+        zoneBTitle.innerText = "Tidak Boleh / Buruk";
+        zoneAIcon.innerText = "👍";
+        zoneBIcon.innerText = "👎";
+      }
+
+      initSimData();
+    }
+
+    function initSimData() {
+      const source = (simMode === 'tempat') ? datasetTempat : datasetSikap;
+      cardDeck = JSON.parse(JSON.stringify(source));
+      placedCards = { A: [], B: [] };
+      simScore = 0;
+      renderSim();
+    }
+
+    function renderSim() {
+      // Update Score
+      const total = (simMode === 'tempat') ? datasetTempat.length : datasetSikap.length;
+      document.getElementById('sim-score').innerText = `Skor: ${simScore} / ${total}`;
+
+      // Render Deck
+      const deckContainer = document.getElementById('deck-container');
+      deckContainer.innerHTML = '';
+
+      if (cardDeck.length === 0) {
+        deckContainer.innerHTML = `
+          <div class="text-center p-3 bg-emerald-100 border border-emerald-300 rounded-xl">
+            <span class="text-2xl">🎉</span>
+            <p class="text-xs font-bold text-emerald-900 mt-1">Luar Biasa!</p>
+            <p class="text-[10px] text-emerald-700">Semua kartu sudah berhasil kamu susun!</p>
+          </div>
+        `;
+      } else {
+        const topCard = cardDeck[0];
+        const cardEl = document.createElement('div');
+        cardEl.className = "drag-card bg-amber-100 border-2 border-amber-400 p-2 rounded-xl shadow flex items-center space-x-2";
+        cardEl.draggable = true;
+        cardEl.ondragstart = (e) => {
+          e.dataTransfer.setData('text/plain', topCard.id);
+        };
+        cardEl.innerHTML = `
+          <span class="text-2xl">${topCard.icon}</span>
+          <span class="text-xs font-bold text-amber-950 flex-1">${topCard.title}</span>
+        `;
+        deckContainer.appendChild(cardEl);
+      }
+
+      // Render Zones
+      renderZoneContainer('zone-a-container', placedCards.A);
+      renderZoneContainer('zone-b-container', placedCards.B);
+    }
+
+    function renderZoneContainer(containerId, list) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = '';
+      list.forEach(item => {
+        const el = document.createElement('div');
+        el.className = "bg-white p-1.5 rounded-lg border border-slate-200 shadow-sm flex items-center space-x-1.5 text-xs font-semibold text-slate-800";
+        el.innerHTML = `
+          <span>${item.icon}</span>
+          <span class="text-[11px] leading-tight flex-1">${item.title}</span>
+          <span class="text-emerald-500 font-bold">✓</span>
+        `;
+        container.appendChild(el);
+      });
+    }
+
+    function allowDrop(ev) {
+      ev.preventDefault();
+    }
+
+    function handleDrop(ev, zoneTarget) {
+      ev.preventDefault();
+      if (cardDeck.length === 0) return;
+
+      const currentCard = cardDeck[0];
+      processPlacement(currentCard, zoneTarget);
+    }
+
+    function quickDrop(zoneTarget) {
+      if (cardDeck.length === 0) return;
+      const currentCard = cardDeck[0];
+      processPlacement(currentCard, zoneTarget);
+    }
+
+    function processPlacement(card, zoneTarget) {
+      if (card.type === zoneTarget) {
+        playSound('correct');
+        placedCards[zoneTarget].push(card);
+        cardDeck.shift(); // Remove top card
+        simScore++;
+      } else {
+        playSound('wrong');
+        // Visual shake feedback
+        const targetEl = document.getElementById(zoneTarget === 'A' ? 'zone-a' : 'zone-b');
+        targetEl.classList.add('bg-red-100', 'border-red-400');
+        setTimeout(() => {
+          targetEl.classList.remove('bg-red-100', 'border-red-400');
+        }, 400);
+      }
+      renderSim();
+    }
+
+    // --- LKPD / QUIZ SYSTEM ---
+    const quizQuestions = [
+      {
+        id: 1,
+        question: "1. Selesai bermain mainan di rumah, apa yang harus kamu lakukan?",
+        options: [
+          { text: "Merapikan kembali ke tempatnya", icon: "📦", correct: true },
+          { text: "Meninggalkannya di lantai", icon: "🧹", correct: false },
+          { text: "Membuangnya ke tempat sampah", icon: "🗑️", correct: false }
+        ]
+      },
+      {
+        id: 2,
+        question: "2. Ketika ingin menggunakan ayunan di sekolah yang sedang dipakai teman, kita harus...",
+        options: [
+          { text: "Merebutnya langsung", icon: "😠", correct: false },
+          { text: "Antri dan menunggu giliran", icon: "⏳", correct: true },
+          { text: "Mendorong teman", icon: "🚫", correct: false }
+        ]
+      },
+      {
+        id: 3,
+        question: "3. Sebelum pergi bermain ke luar rumah bersama teman, kita wajib...",
+        options: [
+          { text: "Langsung lari keluar", icon: "🏃", correct: false },
+          { text: "Pamit dan izin orang tua", icon: "🙏", correct: true },
+          { text: "Menangis keras", icon: "😭", correct: false }
+        ]
+      },
+      {
+        id: 4,
+        question: "4. Bel berbunyi tanda masuk kelas setelah istirahat. Sikap yang benar adalah...",
+        options: [
+          { text: "Selesai bermain dan masuk kelas", icon: "🏫", correct: true },
+          { text: "Lanjut main terus", icon: "⚽", correct: false },
+          { text: "Pura-pura tidak mendengar", icon: "🙉", correct: false }
+        ]
+      },
+      {
+        id: 5,
+        question: "5. Bermain bersama teman-teman di sekolah terasa menyenangkan jika kita...",
+        options: [
+          { text: "Saling berbagi dan ramah", icon: "😊", correct: true },
+          { text: "Pilih-pilih teman", icon: "😒", correct: false },
+          { text: "Suka bertengkar", icon: "🥊", correct: false }
+        ]
+      }
+    ];
+
+    let userAnswers = {};
+
+    function initQuizData() {
+      userAnswers = {};
+      document.getElementById('quiz-score-badge').innerText = "Nilai: 0";
+      document.getElementById('quiz-feedback').innerText = "Selesaikan semua soal untuk melihat hasil!";
+
+      const container = document.getElementById('quiz-container');
+      container.innerHTML = '';
+
+      quizQuestions.forEach((q, index) => {
+        const card = document.createElement('div');
+        card.className = "bg-white p-3 rounded-2xl border border-slate-200 shadow-sm space-y-2";
+        
+        let optionsHTML = '';
+        q.options.forEach((opt, optIndex) => {
+          optionsHTML += `
+            <button onclick="selectOption(${q.id}, ${optIndex})" id="opt-${q.id}-${optIndex}" class="quiz-opt-btn border border-slate-200 p-2 rounded-xl text-xs font-semibold text-slate-700 flex items-center space-x-2 text-left hover:bg-slate-50 transition">
+              <span class="text-base">${opt.icon}</span>
+              <span class="flex-1">${opt.text}</span>
+            </button>
+          `;
+        });
+
+        card.innerHTML = `
+          <h3 class="font-bold text-xs sm:text-sm text-slate-800">${q.question}</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            ${optionsHTML}
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    function selectOption(qId, optIndex) {
+      playSound('click');
+      userAnswers[qId] = optIndex;
+
+      // Reset styling for options in this question
+      const questionData = quizQuestions.find(q => q.id === qId);
+      questionData.options.forEach((_, idx) => {
+        const btn = document.getElementById(`opt-${qId}-${idx}`);
+        if (btn) {
+          btn.className = "quiz-opt-btn border border-slate-200 p-2 rounded-xl text-xs font-semibold text-slate-700 flex items-center space-x-2 text-left hover:bg-slate-50 transition";
+        }
+      });
+
+      // Highlight selected
+      const selectedBtn = document.getElementById(`opt-${qId}-${optIndex}`);
+      if (selectedBtn) {
+        selectedBtn.className = "quiz-opt-btn border-2 border-blue-500 bg-blue-50 p-2 rounded-xl text-xs font-bold text-blue-900 flex items-center space-x-2 text-left transition shadow-sm";
+      }
+    }
+
+    function submitQuiz() {
+      const totalQuestions = quizQuestions.length;
+      let correctCount = 0;
+
+      quizQuestions.forEach(q => {
+        const selectedIdx = userAnswers[q.id];
+        if (selectedIdx !== undefined) {
+          if (q.options[selectedIdx].correct) {
+            correctCount++;
+          }
+        }
+      });
+
+      const score = Math.round((correctCount / totalQuestions) * 100);
+      
+      if (score >= 80) {
+        playSound('correct');
+      } else {
+        playSound('wrong');
+      }
+
+      document.getElementById('quiz-score-badge').innerText = `Nilai: ${score}`;
+      
+      const feedbackEl = document.getElementById('quiz-feedback');
+      if (score === 100) {
+        feedbackEl.innerHTML = `<span class="text-emerald-600 font-bold">🌟 Sempurna! Kamu Anak Hebat Cerdas Aturan! (100/100)</span>`;
+      } else if (score >= 60) {
+        feedbackEl.innerHTML = `<span class="text-blue-600 font-bold">👍 Bagus Sekali! Terus Tingkatkan Ya! (${score}/100)</span>`;
+      } else {
+        feedbackEl.innerHTML = `<span class="text-amber-600 font-bold">💪 Ayo Coba Lagi! Pelajari Teori & Pelajari Aturannya! (${score}/100)</span>`;
+      }
+    }
+  </script>
+</body>
+</html>
